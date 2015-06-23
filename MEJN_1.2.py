@@ -5,9 +5,13 @@ Created on Tue Apr 01 16:16:30 2014
 @author: Jboeye
 """
 import os
+import csv
 os.system("mode con: cols=120 lines=20") #set console width and heigth
+
 import ctypes
-ctypes.windll.kernel32.SetConsoleTitleA("Mens, erger je niet.")
+import platform
+if platform.system() == 'windows':
+    ctypes.windll.kernel32.SetConsoleTitleA("Mens, erger je niet.")
 
 try:    #check if visual library is installed
     import pylab as plt
@@ -24,6 +28,8 @@ class Player:
     def __init__(self):
         self.score = 0
         self.name = None
+        self.nickname = None
+        self.lastname = None
         self.colour = None
         self.victories = 0 #the number of victories a player has accumulated over games
         
@@ -45,21 +51,55 @@ class Game:
                     print "Number must be higher than 1.\n"
             except ValueError:
                 print "Not a number.\n"
-                
+        
+        with open('players.csv') as f:
+            reader = csv.DictReader(f)
+            player_sel_list = []
+            for row in reader:
+                player_sel = Player()
+                player_sel.name = row['name']
+                player_sel.lastname = row['lastname']
+                player_sel.nickname = row['nickname']
+                player_sel_list.append(player_sel)
+        
         for p in xrange(n_players):
             new_player = Player()
-            self.clear_screen()
             while True:
-                name=str(raw_input('Player %s name?  \n: '%(str(p+1))))
-                if len(name)>0:
-                    if name not in self.name_list:
-                        self.name_list.append(name)
-                        self.clear_screen()
+                self.clear_screen()
+                print 'select player or create new player'
+                for player_sel in player_sel_list:
+                    print str(player_sel_list.index(player_sel)) + " " + player_sel.name + " " + player_sel.lastname
+                print str(len(player_sel_list)) + " add new player"
+                try:
+                    name_test = raw_input('\nSelect option: ')
+                    print(name_test)
+                    name_sel=int(name_test)
+                    print name_sel
+                    if name_sel>=0 and name_sel < len(player_sel_list):
+                        name = player_sel_list[name_sel].name
+                        if name not in self.name_list:
+                            print(name)
+                            self.name_list.append(name)
+                            self.clear_screen()
+                            break
+                        else:
+                            print "Name already taken.\n"
                         break
+                    elif name_sel == len(player_sel_list):
+                        name=str(raw_input('Player %s name?  \n: '%(str(p+1))))
+                        if len(name)>0:
+                            if name not in self.name_list:
+                                self.name_list.append(name)
+                                self.clear_screen()
+                                break
+                            else:
+                                print "Name already taken.\n"
+                        else:
+                            print "Name too short.\n"
                     else:
-                        print "Name already taken.\n"
-                else:
-                    print "Name too short.\n"
+                        print "option not valid"
+                except ValueError:
+                    print "Not a number.\n"
             new_player.name = name
             self.players.append(new_player)
         self.reset_score_history()
