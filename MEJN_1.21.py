@@ -1,13 +1,24 @@
 # -*- coding: utf-8 -*-
 """
+Created on Tue Jun 23 22:08:18 2015
+
+@author: Jboeye
+"""
+
+# -*- coding: utf-8 -*-
+"""
 Created on Tue Apr 01 16:16:30 2014
 1.1: add graph
 @author: Jboeye
 """
 import os
+import csv
+os.system("mode con: cols=120 lines=20") #set console width and heigth
 
 import ctypes
-ctypes.windll.kernel32.SetConsoleTitleA("Mens, erger je niet.")
+import platform
+if platform.system() == 'windows':
+    ctypes.windll.kernel32.SetConsoleTitleA("Mens, erger je niet.")
 
 try:    #check if visual library is installed
     import pylab as plt
@@ -18,11 +29,14 @@ else:
     visuals = True
     plt.ion()
     
+
 class Player:
     '''Holds the unique properties of each player'''
     def __init__(self):
         self.score = 0
         self.name = None
+        self.nickname = None
+        self.lastname = None
         self.colour = None
         self.victories = 0 #the number of victories a player has accumulated over games
         
@@ -44,24 +58,57 @@ class Game:
                     print "Number must be higher than 1.\n"
             except ValueError:
                 print "Not a number.\n"
-                
+        
+        with open('players.csv') as f:
+            reader = csv.DictReader(f)
+            player_sel_list = []
+            for row in reader:
+                player_sel = Player()
+                player_sel.name = row['name']
+                player_sel.lastname = row['lastname']
+                player_sel.nickname = row['nickname']
+                player_sel_list.append(player_sel)
+        
         for p in xrange(n_players):
             new_player = Player()
-            self.clear_screen()
             while True:
-                name=str(raw_input('Player %s name?  \n: '%(str(p+1))))
-                if len(name)>0:
-                    if name not in self.name_list:
-                        self.name_list.append(name)
-                        self.clear_screen()
+                self.clear_screen()
+                print 'select player or create new player'
+                for player_sel in player_sel_list:
+                    print str(player_sel_list.index(player_sel)) + " " + player_sel.name + " " + player_sel.lastname
+                print str(len(player_sel_list)) + " add new player"
+                try:
+                    name_test = raw_input('\nSelect option: ')
+                    print(name_test)
+                    name_sel=int(name_test)
+                    print name_sel
+                    if name_sel>=0 and name_sel < len(player_sel_list):
+                        name = player_sel_list[name_sel].name
+                        if name not in self.name_list:
+                            print(name)
+                            self.name_list.append(name)
+                            self.clear_screen()
+                            break
+                        else:
+                            print "Name already taken.\n"
                         break
+                    elif name_sel == len(player_sel_list):
+                        name=str(raw_input('Player %s name?  \n: '%(str(p+1))))
+                        if len(name)>0:
+                            if name not in self.name_list:
+                                self.name_list.append(name)
+                                self.clear_screen()
+                                break
+                            else:
+                                print "Name already taken.\n"
+                        else:
+                            print "Name too short.\n"
                     else:
-                        print "Name already taken.\n"
-                else:
-                    print "Name too short.\n"
+                        print "option not valid"
+                except ValueError:
+                    print "Not a number.\n"
             new_player.name = name
             self.players.append(new_player)
-        os.system("mode con: cols=%s lines=%s"%(5+17*len(self.players),20+2*len(self.players))) #set console width and heigth
         self.reset_score_history()
         
     def reset_score_history(self):
@@ -73,7 +120,8 @@ class Game:
                 player.colour = colour_list[index]
             else:
                 r = lambda: rnd.randint(0,255) #select a random colour for players past player 7
-                player.colour = '#%02X%02X%02X' % (r(),r(),r())        
+                for player in self.players:            
+                    player.colour = '#%02X%02X%02X' % (r(),r(),r())        
             
     def reset_scores_and_restart(self):
         '''Change the order so that the winner goes first'''
@@ -119,9 +167,6 @@ class Game:
                 print 'To get %s, score %s points.\n'%(target.name, str(score_to_get))
                 
     def check_equal_scores(self,player):
-        '''Check whether competitors have the same score
-        the purpose is just printing rather than setting the competitor to zero
-        this allows canceling the change'''
         for competitor in self.players:
             if ((competitor.name != player.name)
             and (player.score > 0)
@@ -129,8 +174,6 @@ class Game:
                 print "%s, you set %s's score to zero.\n"%(player.name,competitor.name)
                 
     def set_competitor_to_zero(self,player):
-        '''Check whether competitors have the same score
-        and set their score to zero'''        
         for index,competitor in enumerate(self.players):
             if ((competitor.name != player.name)
             and (player.score > 0)
@@ -139,7 +182,6 @@ class Game:
                 self.score_history[index][-1] = 0
             
     def standings(self,round_n,final):
-        '''Print the scores and standing in a structured manner'''
         scores = []
         for player in self.players:
             scores.append(player.score)
@@ -174,7 +216,11 @@ class Game:
             print score ,'\t'*2,
         print ''
         print '#'*16*len(self.players),'\n'
-
+        #response = None
+#        while True:
+#            response=str(raw_input('\nPress enter to continue'))
+#            if response != None:
+#                break
         if final:
             print '\n%s WINS!!!\n'%(sorted_players[0].name)
             sorted_players[0].victories+=1
@@ -190,7 +236,6 @@ class Game:
         plt.pause(.0001) 
         
     def set_scores_manually(self):
-        '''Allow the user to change each player's score'''
         for index, player in enumerate(self.players):
             self.clear_screen()
             try:
@@ -202,11 +247,11 @@ class Game:
                 self.score_history[index][-1]=player.score
                 self.clear_screen()
             except ValueError:
-                self.clear_screen()                  
+                self.clear_screen()
+                    
+            
         
     def start_game(self):
-        '''The core of the game class, it holds the loop that runs during
-        a game. It is terminated when the game is finished'''
         round_n = 1
         winner = Player()
         if visuals:
@@ -214,6 +259,7 @@ class Game:
         while (winner.name == None) and (round_n<11):
             for index, player in enumerate(self.players):
                 self.clear_screen()
+                #print 'Current player =', player.name ,"\n"
                 while True:
                     try:
                         self.standings(round_n,final=False)
@@ -261,6 +307,9 @@ class Game:
                 if winner.name != None:
                     break
             if winner.name == None:
+#                if round_n<10:
+#                    self.clear_screen()
+#                    self.standings(round_n)
                 round_n += 1
         self.clear_screen()
         if winner.name == None:
