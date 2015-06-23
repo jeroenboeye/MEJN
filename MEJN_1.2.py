@@ -20,6 +20,7 @@ else:
     
 
 class Player:
+    '''Holds the unique properties of each player'''
     def __init__(self):
         self.score = 0
         self.name = None
@@ -27,10 +28,13 @@ class Player:
         self.victories = 0 #the number of victories a player has accumulated over games
         
 class Game:
+    '''The main class, regulates everything'''
     def __init__(self):
         self.reset_game()
         
     def prepare_game(self):
+        '''Preparing the game by setting up the 
+        number of players and their names'''
         self.clear_screen()
         while True:
             try:
@@ -61,21 +65,21 @@ class Game:
         self.reset_score_history()
         
     def reset_score_history(self):
-        '''Reset history and give players random colours'''
+        '''Reset history and give players colours'''
         self.score_history=[[0] for i in xrange(len(self.players))]            
         colour_list = ['red','green','blue','cyan','magenta','yellow','black']
         for index,player in enumerate(self.players): 
             if index<7:
                 player.colour = colour_list[index]
             else:
-                r = lambda: rnd.randint(0,255)
+                r = lambda: rnd.randint(0,255) #select a random colour for players past player 7
                 for player in self.players:            
                     player.colour = '#%02X%02X%02X' % (r(),r(),r())        
             
     def reset_scores_and_restart(self):
         '''Change the order so that the winner goes first'''
         self.players.sort(key=lambda player: player.score, reverse=True)   
-        '''Reset scores to zero''' 
+        #Reset scores to zero
         self.reset_score_history()
         for player in self.players:
             player.score = 0
@@ -91,8 +95,9 @@ class Game:
         self.start_game()        
     
     def give_advice(self,player):
-        target_list = []
-        special_target_list = []
+        '''advice players on what to throw to finish or hit other player'''
+        target_list = [] #list of players with a higher score
+        special_target_list = [] #list of players with a lower score who you can hit by passing 321
         for competitor in self.players:
             if player.name != competitor.name: 
                 if competitor.score > player.score:
